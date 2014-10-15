@@ -13,11 +13,36 @@
 
 # If it's not working and you want to know why, set DEBUG to 1 and check the
 # logfile.
+
+# Additional features including IP address display and alphabetizing windows
+# added 2014-10-14 by Matthew Gillespie <gillespiem@braindeacprojects.com>
+
 DEBUG=0
 DEBUGLOG="$HOME/.ssh/screen_ssh.log"
 
 set -e
 set -u
+
+
+#Function to sort the windows in GNU screen
+# Requires the -Q ability, first released in screen 4.2.0
+function sort_windows()
+{
+    WINDOWLIST=`/usr/bin/screen -Q  windows`
+    WINDOWCOMMANDS=`echo $WINDOWLIST |  tr -s ' ' '\n' | egrep -v  '\\$' |  sort -n |  awk '{print "/usr/bin/screen -p "$1" -X number, "}' | tr -s '\n' ' '`
+    
+    IFS=',' read -a winmovearray <<< "$WINDOWCOMMANDS"
+   
+    #Remove the trailing and empty command
+    unset winmovearray[${#winmovearray[@]}-1]
+
+    item=1;
+    for command in "${winmovearray[@]}";
+    do
+        `$command $item`
+        ((item=item+1))
+    done;
+}
 
 dbg ()
 {
@@ -66,6 +91,17 @@ else
   dbg "Using OpenSSH 5.x hostname specification: $HOST"
 fi
 
+#If we're hitting an IP, show me the full IP
+if [[ $HOST =~ ^[0-9\.]+$ ]];
+    then 
+        echo $HOST | awk '{ printf ("\033k%s\033\\", $NF) }'
+        sort_windows 
+        exit;
+    fi;
+
 echo $HOST | sed -e 's/\.[^.]*\.[^.]*\(\.uk\)\{0,1\}$//' | awk '{ printf ("\033k%s\033\\", $NF) }'
+sort_windows 
+
+
 
 dbg "Done."
