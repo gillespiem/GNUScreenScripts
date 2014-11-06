@@ -26,6 +26,7 @@ set -u
 
 #Function to sort the windows in GNU screen
 # Requires the -Q ability, first released in screen 4.2.0
+# @note: -Q windows seems to only return around 186 characters, meaning large number of windows won't work correctly.
 function sort_windows()
 {
     WINDOWLIST=`/usr/bin/screen -Q  windows`
